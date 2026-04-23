@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tabela de Esticamento de Cabos</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root {
+    --navy: #1F3864;
+    --blue: #2E75B6;
+    --lblue: #BDD7EE;
+    --llblue: #DEEAF1;
+    --orange: #C55A11;
+    --lorange: #FCE4D6;
+    --green: #375623;
+    --lgreen: #E2EFDA;
+    --yellow: #FFF2CC;
+    --gray: #F2F2F2;
+    --dgray: #595959;
+    --white: #FFFFFF;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: Arial, sans-serif;
+    background: #edf2f7;
+    color: #222;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--navy);
+    color: white;
+    padding: 20px 32px 16px;
+    border-bottom: 4px solid var(--blue);
+  }
+  header h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: .5px; }
+  header p  { font-size: 0.82rem; opacity: .8; margin-top: 4px; font-style: italic; }
+
+  /* ── LAYOUT ── */
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 28px 20px 60px;
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+
+  /* ── FORM CARD ── */
+  .card {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.08);
+    overflow: hidden;
+  }
+  .card-header {
+    background: var(--blue);
+    color: white;
+    padding: 12px 18px;
+    font-weight: 700;
+    font-size: .92rem;
+    letter-spacing: .3px;
+  }
+  .card-body { padding: 18px; }
+
+  .field { margin-bottom: 14px; }
+  .field label {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    font-size: .82rem;
+    color: var(--dgray);
+    margin-bottom: 4px;
+  }
+  .field label .sym {
+    font-weight: 700;
+    color: var(--navy);
+    font-size: .9rem;
+    min-width: 22px;
+  }
+  .field input {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1.5px solid #cbd5e0;
+    border-radius: 6px;
+    font-size: .9rem;
+    background: var(--yellow);
+    transition: border .2s, box-shadow .2s;
+    outline: none;
+  }
+  .field input:focus {
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px rgba(46,117,182,.15);
+    background: white;
+  }
+  .field .unit {
+    font-size: .75rem;
+    color: #999;
+    font-style: italic;
+  }
+
+  .divider {
+    border: none;
+    border-top: 1px solid #e2e8f0;
+    margin: 16px 0;
+  }
+
+  .section-label {
+    font-size: .75rem;
+    font-weight: 700;
+    color: var(--blue);
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    margin-bottom: 10px;
+  }
+
+  .btn-calc {
+    width: 100%;
+    padding: 12px;
+    background: var(--navy);
+    color: white;
+    border: none;
+    border-radius: 7px;
+    font-size: .95rem;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: .3px;
+    transition: background .2s, transform .1s;
+    margin-top: 6px;
+  }
+  .btn-calc:hover { background: var(--blue); }
+  .btn-calc:active { transform: scale(.98); }
+
+  .btn-pdf {
+    width: 100%;
+    padding: 10px;
+    background: var(--orange);
+    color: white;
+    border: none;
+    border-radius: 7px;
+    font-size: .88rem;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: background .2s;
+    display: none;
+  }
+  .btn-pdf:hover { background: #a34a0e; }
+  .btn-pdf.visible { display: block; }
+
+  /* ── RESULTS PANEL ── */
+  .results-panel { min-height: 300px; }
+
+  .placeholder {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.08);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 320px;
+    color: #aaa;
+    gap: 14px;
+    padding: 40px;
+  }
+  .placeholder svg { opacity: .3; }
+  .placeholder p { font-size: .95rem; text-align: center; }
+
+  /* ── RESULTS TABLE CARD ── */
+  #results-card {
+    display: none;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.08);
+    overflow: hidden;
+  }
+  #results-card.visible { display: block; }
+
+  .results-title {
+    background: var(--navy);
+    color: white;
+    padding: 14px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .results-title h2 { font-size: 1rem; font-weight: 700; }
+  .results-title span { font-size: .8rem; opacity: .75; }
+
+  /* Parâmetros resumidos */
+  .params-bar {
+    background: var(--llblue);
+    padding: 10px 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    border-bottom: 1px solid #c9dff0;
+  }
+  .param-chip {
+    font-size: .78rem;
+    color: var(--navy);
+    background: white;
+    border: 1px solid var(--lblue);
+    border-radius: 20px;
+    padding: 3px 10px;
+  }
+  .param-chip strong { color: var(--blue); }
+
+  /* Estado inicial */
+  .initial-state {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    border-bottom: 2px solid var(--lblue);
+  }
+  .init-cell {
+    padding: 12px 16px;
+    border-right: 1px solid #e2e8f0;
+    text-align: center;
+  }
+  .init-cell:last-child { border-right: none; }
+  .init-cell .ic-label { font-size: .72rem; color: var(--dgray); margin-bottom: 3px; }
+  .init-cell .ic-val   { font-size: 1.05rem; font-weight: 700; color: var(--navy); }
+  .init-cell .ic-sym   { font-size: .78rem; color: var(--blue); font-style: italic; }
+
+  /* Tabela */
+  .table-wrap { overflow-x: auto; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .9rem;
+  }
+  thead th {
+    background: var(--blue);
+    color: white;
+    padding: 11px 16px;
+    text-align: center;
+    font-weight: 700;
+    font-size: .85rem;
+    white-space: nowrap;
+  }
+  tbody tr { border-bottom: 1px solid #e8edf2; }
+  tbody tr:hover { background: #f7fafd; }
+  tbody td {
+    padding: 10px 16px;
+    text-align: center;
+    font-size: .9rem;
+  }
+  tbody tr.ref-row {
+    background: var(--lorange);
+    font-weight: 700;
+  }
+  tbody tr.ref-row td { color: var(--orange); }
+  tbody tr.decade-row { background: var(--llblue); }
+  tbody tr.decade-row td { color: var(--navy); }
+
+  .col-temp { width: 130px; }
+  .col-h    { width: 200px; }
+  .col-f    { width: 160px; }
+  .col-te   { width: 180px; }
+
+  /* Barra de tendência */
+  .bar-wrap { display: flex; align-items: center; gap: 8px; justify-content: center; }
+  .bar-bg {
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    flex: 1;
+    max-width: 80px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width .4s;
+  }
+  .bar-h    { background: linear-gradient(90deg, var(--blue), var(--lblue)); }
+  .bar-f    { background: linear-gradient(90deg, var(--orange), #f4a460); }
+
+  /* Nota rodapé */
+  .table-footer {
+    padding: 12px 20px;
+    background: var(--lorange);
+    font-size: .78rem;
+    color: var(--orange);
+    font-style: italic;
+    border-top: 1px solid #f4b97a;
+  }
+
+  /* ── ITERAÇÕES ACCORDION ── */
+  .iter-section {
+    border-top: 2px solid var(--llblue);
+    padding: 14px 20px;
+  }
+  .iter-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: .88rem;
+    color: var(--blue);
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0;
+  }
+  .iter-toggle:hover { color: var(--navy); }
+  .iter-table-wrap { display: none; margin-top: 12px; overflow-x: auto; }
+  .iter-table-wrap.open { display: block; }
+
+  .iter-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .82rem;
+  }
+  .iter-table th {
+    background: var(--navy);
+    color: white;
+    padding: 8px 12px;
+    text-align: center;
+    font-size: .78rem;
+  }
+  .iter-table td {
+    padding: 7px 12px;
+    text-align: center;
+    border-bottom: 1px solid #e8edf2;
+    font-family: 'Courier New', monospace;
+  }
+  .iter-table tr.converged { background: var(--lgreen); font-weight: 700; }
+  .iter-table tr.converged td { color: var(--green); }
+  .iter-sel {
+    font-size: .82rem;
+    padding: 5px 8px;
+    border: 1.5px solid var(--lblue);
+    border-radius: 5px;
+    margin-left: 10px;
+    color: var(--navy);
+    background: white;
+  }
+
+  /* ── SPINNER ── */
+  .spinner {
+    display: none;
+    width: 28px; height: 28px;
+    border: 3px solid #e2e8f0;
+    border-top-color: var(--blue);
+    border-radius: 50%;
+    animation: spin .6s linear infinite;
+    margin: 40px auto;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 780px) {
+    .container { grid-template-columns: 1fr; }
+    .initial-state { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* ── PRINT ── */
+  @media print {
+    body { background: white; }
+    .container { grid-template-columns: 1fr; padding: 0; }
+    .card:first-child { display: none; }
+    #results-card { display: block !important; box-shadow: none; }
+    .btn-pdf, .iter-section { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⚡ Tabela de Esticamento de Cabos — Linhas de Transmissão</h1>
+  <p>Cálculo de flechas e trações em função da temperatura &nbsp;|&nbsp; Santiago – Linhas Aéreas de Transmissão, Item 3.3 &nbsp;|&nbsp; Método: Newton-Raphson</p>
+</header>
+
+<div class="container">
+
+  <!-- ── FORMULÁRIO ── -->
+  <div>
+    <div class="card">
+      <div class="card-header">📐 Dados de Entrada</div>
+      <div class="card-body">
+
+        <div class="section-label">Geometria do Vão</div>
+
+        <div class="field">
+          <label><span class="sym">S</span> Comprimento horizontal do vão <span class="unit">(m)</span></label>
+          <input type="number" id="S" value="500" step="1" min="1">
+        </div>
+        <div class="field">
+          <label><span class="sym">D</span> Desnível entre os suportes <span class="unit">(m)</span></label>
+          <input type="number" id="D" value="10" step="0.1" min="0">
+        </div>
+
+        <hr class="divider">
+        <div class="section-label">Características do Cabo</div>
+
+        <div class="field">
+          <label><span class="sym">W</span> Peso por unidade de comprimento <span class="unit">(kg/m)</span></label>
+          <input type="number" id="W" value="1.628" step="0.001" min="0.001">
+        </div>
+        <div class="field">
+          <label><span class="sym">A</span> Área da seção reta <span class="unit">(mm²)</span></label>
+          <input type="number" id="A" value="423.24" step="0.01" min="0.01">
+        </div>
+        <div class="field">
+          <label><span class="sym">E</span> Módulo de elasticidade <span class="unit">(kgf/mm²)</span></label>
+          <input type="number" id="E" value="65000" step="100" min="1000">
+        </div>
+        <div class="field">
+          <label><span class="sym">α</span> Coeficiente de dilatação linear <span class="unit">(1/°C)</span></label>
+          <input type="number" id="alpha" value="0.0000193" step="0.0000001" min="0">
+        </div>
+
+        <hr class="divider">
+        <div class="section-label">Condição de Referência</div>
+
+        <div class="field">
+          <label><span class="sym">H₀</span> Tração horizontal de referência <span class="unit">(kgf)</span></label>
+          <input type="number" id="H0" value="3000" step="10" min="1">
+        </div>
+        <div class="field">
+          <label><span class="sym">t₀</span> Temperatura de referência <span class="unit">(°C)</span></label>
+          <input type="number" id="t0" value="25" step="1">
+        </div>
+
+        <hr class="divider">
+        <div class="section-label">Faixa de Temperatura</div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div class="field">
+            <label><span class="sym">t_min</span> Temperatura mínima <span class="unit">(°C)</span></label>
+            <input type="number" id="tmin" value="0" step="1">
+          </div>
+          <div class="field">
+            <label><span class="sym">t_max</span> Temperatura máxima <span class="unit">(°C)</span></label>
+            <input type="number" id="tmax" value="90" step="1">
+          </div>
+        </div>
+        <div class="field">
+          <label><span class="sym">Δt</span> Passo de temperatura <span class="unit">(°C)</span></label>
+          <input type="number" id="dt" value="5" step="1" min="1" max="20">
+        </div>
+
+        <button class="btn-calc" onclick="calcular()">⚡ Gerar Tabela de Esticamento</button>
+        <button class="btn-pdf" id="btn-pdf" onclick="exportarPDF()">📄 Exportar como PDF</button>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RESULTADOS ── -->
+  <div class="results-panel">
+
+    <div class="placeholder" id="placeholder">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M9 17H7A5 5 0 017 7h.5M15 7h.5a5 5 0 010 10H15M9 12h6"/>
+      </svg>
+      <p>Preencha os dados de entrada e clique em<br><strong>Gerar Tabela de Esticamento</strong></p>
+    </div>
+
+    <div class="spinner" id="spinner"></div>
+
+    <div id="results-card">
+
+      <div class="results-title">
+        <h2>📊 Tabela de Esticamento</h2>
+        <span id="results-subtitle"></span>
+      </div>
+
+      <div class="params-bar" id="params-bar"></div>
+
+      <div class="initial-state" id="initial-state"></div>
+
+      <div class="table-wrap">
+        <table id="result-table">
+          <thead>
+            <tr>
+              <th class="col-temp">Temperatura (°C)</th>
+              <th class="col-h">Tração Horizontal (kgf)</th>
+              <th class="col-f">Flecha Máxima (m)</th>
+              <th class="col-te">Tensão Equivalente Tₑ₁ (kgf)</th>
+            </tr>
+          </thead>
+          <tbody id="result-body"></tbody>
+        </table>
+      </div>
+
+      <div class="table-footer" id="table-footer"></div>
+
+      <!-- Iterações accordion -->
+      <div class="iter-section">
+        <button class="iter-toggle" onclick="toggleIter()">
+          <span id="iter-arrow">▶</span>
+          Ver passo a passo iterativo (Newton-Raphson)
+          <select class="iter-sel" id="iter-sel" onchange="renderIter()" onclick="e => e.stopPropagation()"></select>
+        </button>
+        <div class="iter-table-wrap" id="iter-wrap">
+          <table class="iter-table">
+            <thead>
+              <tr>
+                <th>Iteração (n)</th>
+                <th>H₁ tentativa (kgf)</th>
+                <th>L_cat (m)</th>
+                <th>L_est (m)</th>
+                <th>R = L_cat − L_est (m)</th>
+                <th>H₁ novo (kgf)</th>
+                <th>|ΔH| (kgf)</th>
+              </tr>
+            </thead>
+            <tbody id="iter-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CÁLCULO ──────────────────────────────────────────────────
+let allResults = [];
+let initState  = {};
+let inputSnap  = {};
+
+function calcular() {
+  const S     = parseFloat(document.getElementById('S').value);
+  const D     = parseFloat(document.getElementById('D').value);
+  const W     = parseFloat(document.getElementById('W').value);
+  const H0    = parseFloat(document.getElementById('H0').value);
+  const t0    = parseFloat(document.getElementById('t0').value);
+  const A     = parseFloat(document.getElementById('A').value);
+  const E     = parseFloat(document.getElementById('E').value);
+  const alpha = parseFloat(document.getElementById('alpha').value);
+  const tmin  = parseFloat(document.getElementById('tmin').value);
+  const tmax  = parseFloat(document.getElementById('tmax').value);
+  const dt    = parseFloat(document.getElementById('dt').value);
+
+  if ([S,D,W,H0,t0,A,E,alpha,tmin,tmax,dt].some(isNaN)) {
+    alert('Por favor, preencha todos os campos corretamente.'); return;
+  }
+
+  inputSnap = {S,D,W,H0,t0,A,E,alpha,tmin,tmax,dt};
+
+  document.getElementById('placeholder').style.display = 'none';
+  document.getElementById('spinner').style.display = 'block';
+  document.getElementById('results-card').classList.remove('visible');
+
+  setTimeout(() => {
+    // Estado inicial
+    const L0   = Math.sqrt(S*S+D*D) * (1 + (W*W*S*S)/(24*H0*H0));
+    const Te0  = Math.sqrt(H0*H0 + (W*S/2)*(W*S/2));
+    const F0   = W*S*S/(8*H0);
+    const L0s  = L0 * (1 - Te0/(A*E));
+    initState  = {L0, Te0, F0, L0s};
+
+    // Temperaturas
+    const temps = [];
+    for (let t = tmin; t <= tmax + 1e-9; t += dt) temps.push(Math.round(t*100)/100);
+
+    // Newton-Raphson para cada temperatura
+    allResults = temps.map(temp => {
+      let H = H0;
+      const iters = [];
+      for (let n = 0; n < 50; n++) {
+        const Te1   = Math.sqrt(H*H + (W*S/2)*(W*S/2));
+        const SqD   = Math.sqrt(S*S + D*D);
+        const L_cat = SqD * (1 + W*W*S*S/(24*H*H));
+        const L_est = L0s * (1 + alpha*(temp-t0) + Te1/(A*E));
+        const R     = L_cat - L_est;
+        const dLcat = SqD * (-W*W*S*S/(12*H*H*H));
+        const dLest = L0s * H / (Te1 * A * E);
+        const dR    = dLcat - dLest;
+        const H_new = H - R/dR;
+        iters.push({n:n+1, H, L_cat, L_est, R, H_new, dH: Math.abs(H_new-H)});
+        if (Math.abs(H_new - H) < 1e-8) { H = H_new; break; }
+        H = H_new;
+      }
+      const F1  = W*S*S/(8*H);
+      const Te1 = Math.sqrt(H*H + (W*S/2)*(W*S/2));
+      return {temp, H1:H, F1, Te1, iters};
+    });
+
+    renderResults(inputSnap, initState, allResults);
+
+    document.getElementById('spinner').style.display = 'none';
+    document.getElementById('results-card').classList.add('visible');
+    document.getElementById('btn-pdf').classList.add('visible');
+  }, 80);
+}
+
+// ── RENDERIZAÇÃO ─────────────────────────────────────────────
+function renderResults(inp, init, results) {
+  const {S,D,W,H0,t0,A,E,alpha} = inp;
+
+  // Subtítulo
+  document.getElementById('results-subtitle').textContent =
+    `${results.length} temperaturas  |  Δt = ${inp.dt}°C`;
+
+  // Chips de parâmetros
+  const chips = [
+    `S = ${S} m`, `D = ${D} m`, `W = ${W} kg/m`,
+    `H₀ = ${H0} kgf`, `t₀ = ${t0}°C`,
+    `A = ${A} mm²`, `E = ${E} kgf/mm²`, `α = ${alpha} /°C`
+  ];
+  document.getElementById('params-bar').innerHTML =
+    chips.map(c => `<span class="param-chip"><strong>${c.split('=')[0].trim()}</strong> = ${c.split('=')[1].trim()}</span>`).join('');
+
+  // Estado inicial
+  const is = document.getElementById('initial-state');
+  is.innerHTML = [
+    {sym:'L₀',    val:init.L0.toFixed(4),  unit:'m',    label:'Comp. cabo em t₀'},
+    {sym:'Te₀',   val:init.Te0.toFixed(2), unit:'kgf',  label:'Tensão equiv. em t₀'},
+    {sym:'F₀',    val:init.F0.toFixed(3),  unit:'m',    label:'Flecha máx. em t₀'},
+    {sym:'L₀*',   val:init.L0s.toFixed(4), unit:'m',    label:'Comp. sem tensão'},
+  ].map(c => `
+    <div class="init-cell">
+      <div class="ic-label">${c.label}</div>
+      <div class="ic-val">${c.val}</div>
+      <div class="ic-sym">${c.sym} (${c.unit})</div>
+    </div>`).join('');
+
+  // Escala para barras
+  const maxH = Math.max(...results.map(r => r.H1));
+  const minH = Math.min(...results.map(r => r.H1));
+  const maxF = Math.max(...results.map(r => r.F1));
+  const minF = Math.min(...results.map(r => r.F1));
+  const scaleH = v => Math.round(((v-minH)/(maxH-minH||1))*100);
+  const scaleF = v => Math.round(((v-minF)/(maxF-minF||1))*100);
+
+  // Corpo da tabela
+  const tbody = document.getElementById('result-body');
+  tbody.innerHTML = results.map(r => {
+    const isRef    = Math.abs(r.temp - t0) < 1e-9;
+    const isDecade = !isRef && r.temp % 10 === 0;
+    const rowClass = isRef ? 'ref-row' : (isDecade ? 'decade-row' : '');
+    const wH = scaleH(r.H1), wF = scaleF(r.F1);
+    return `<tr class="${rowClass}">
+      <td><strong>${r.temp}°C</strong>${isRef ? ' <span style="font-size:.7rem">(ref)</span>' : ''}</td>
+      <td>
+        <div class="bar-wrap">
+          <div class="bar-bg"><div class="bar-fill bar-h" style="width:${wH}%"></div></div>
+          <strong>${r.H1.toFixed(1)}</strong>
+        </div>
+      </td>
+      <td>
+        <div class="bar-wrap">
+          <div class="bar-bg"><div class="bar-fill bar-f" style="width:${wF}%"></div></div>
+          ${r.F1.toFixed(3)}
+        </div>
+      </td>
+      <td>${r.Te1.toFixed(1)}</td>
+    </tr>`;
+  }).join('');
+
+  // Rodapé
+  const maxF_val  = results.reduce((a,b) => b.F1>a.F1?b:a);
+  document.getElementById('table-footer').innerHTML =
+    `⚠️ Flecha máxima admissível deve ser verificada conforme gabarito de locação das estruturas (Santiago, Item 3.6). &nbsp;|&nbsp; Flecha máxima calculada: <strong>${maxF_val.F1.toFixed(3)} m</strong> em <strong>${maxF_val.temp}°C</strong>.`;
+
+  // Seletor de temperatura para iterações
+  const sel = document.getElementById('iter-sel');
+  sel.innerHTML = results.map(r =>
+    `<option value="${r.temp}">${r.temp}°C</option>`).join('');
+  renderIter();
+}
+
+// ── ACCORDION DE ITERAÇÕES ────────────────────────────────────
+function toggleIter() {
+  const wrap = document.getElementById('iter-wrap');
+  const arrow = document.getElementById('iter-arrow');
+  const open = wrap.classList.toggle('open');
+  arrow.textContent = open ? '▼' : '▶';
+}
+
+function renderIter() {
+  const temp   = parseFloat(document.getElementById('iter-sel').value);
+  const result = allResults.find(r => Math.abs(r.temp - temp) < 1e-9);
+  if (!result) return;
+  const tbody = document.getElementById('iter-body');
+  tbody.innerHTML = result.iters.map(it => {
+    const conv = it.dH < 1e-6;
+    return `<tr class="${conv ? 'converged' : ''}">
+      <td>${it.n}</td>
+      <td>${it.H.toFixed(4)}</td>
+      <td>${it.L_cat.toFixed(6)}</td>
+      <td>${it.L_est.toFixed(6)}</td>
+      <td style="color:${it.R>0?'#2E75B6':'#C55A11'}">${it.R.toFixed(8)}</td>
+      <td>${it.H_new.toFixed(4)}</td>
+      <td>${it.dH.toFixed(8)}${conv?' ✅':''}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── EXPORT PDF ───────────────────────────────────────────────
+function exportarPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const pw = 210; // largura A4
+  const ml = 15, mr = 15, mt = 18;
+  let y = mt;
+
+  // Cores
+  const navy  = [31,  56,  100];
+  const blue  = [46,  117, 182];
+  const lblue = [189, 215, 238];
+  const orange= [197, 90,  17];
+  const lorange=[252, 228, 214];
+  const lgreen= [226, 239, 218];
+  const green = [55,  86,  35];
+  const lgray = [242, 242, 242];
+  const white = [255, 255, 255];
+
+  const inp = inputSnap;
+  const init = initState;
+
+  // ── Cabeçalho
+  doc.setFillColor(...navy);
+  doc.rect(0, 0, pw, 22, 'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(13); doc.setFont('helvetica','bold');
+  doc.text('TABELA DE ESTICAMENTO DE CABOS', pw/2, 10, {align:'center'});
+  doc.setFontSize(8); doc.setFont('helvetica','normal');
+  doc.text('Flechas e Trações em Função da Temperatura  |  Santiago – Linhas Aéreas de Transmissão, Item 3.3', pw/2, 16, {align:'center'});
+  y = 28;
+
+  // ── Parâmetros
+  doc.setFillColor(...lblue);
+  doc.rect(ml, y, pw-ml-mr, 8, 'F');
+  doc.setTextColor(...navy); doc.setFontSize(8); doc.setFont('helvetica','bold');
+  doc.text('DADOS DE ENTRADA', ml+2, y+5.5);
+  y += 10;
+
+  const params = [
+    [`S = ${inp.S} m`, `D = ${inp.D} m`, `W = ${inp.W} kg/m`, `H₀ = ${inp.H0} kgf`],
+    [`t₀ = ${inp.t0}°C`, `A = ${inp.A} mm²`, `E = ${inp.E} kgf/mm²`, `α = ${inp.alpha} /°C`],
+  ];
+  doc.setFont('helvetica','normal'); doc.setTextColor(0,0,0); doc.setFontSize(8);
+  params.forEach(row => {
+    const colW = (pw-ml-mr)/4;
+    row.forEach((val,ci) => {
+      doc.setFillColor(...lgray);
+      doc.rect(ml+ci*colW, y, colW-1, 7, 'F');
+      doc.text(val, ml+ci*colW+colW/2, y+4.8, {align:'center'});
+    });
+    y += 8;
+  });
+  y += 4;
+
+  // ── Estado inicial
+  doc.setFillColor(...navy);
+  doc.rect(ml, y, pw-ml-mr, 7, 'F');
+  doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(8);
+  doc.text('ESTADO INICIAL (temperatura de referência t₀)', ml+2, y+5);
+  y += 9;
+
+  const initCols = [
+    `L₀ = ${init.L0.toFixed(4)} m`,
+    `Te₀ = ${init.Te0.toFixed(2)} kgf`,
+    `F₀ = ${init.F0.toFixed(3)} m`,
+    `L₀* = ${init.L0s.toFixed(4)} m`,
+  ];
+  const colW4 = (pw-ml-mr)/4;
+  doc.setFont('helvetica','normal'); doc.setTextColor(0,0,0); doc.setFontSize(8.5);
+  initCols.forEach((val,ci) => {
+    doc.setFillColor(...lblue);
+    doc.rect(ml+ci*colW4, y, colW4-1, 8, 'F');
+    doc.text(val, ml+ci*colW4+colW4/2, y+5.5, {align:'center'});
+  });
+  y += 12;
+
+  // ── Cabeçalho da tabela
+  doc.setFillColor(...blue);
+  doc.rect(ml, y, pw-ml-mr, 8, 'F');
+  doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(8.5);
+  const cols = [30, 55, 40, 55];
+  const headers = ['Temperatura (°C)', 'Tração Horizontal (kgf)', 'Flecha Máxima (m)', 'Tensão Equiv. Tₑ₁ (kgf)'];
+  let x = ml;
+  headers.forEach((h, ci) => {
+    doc.text(h, x + cols[ci]/2, y+5.5, {align:'center'});
+    x += cols[ci];
+  });
+  y += 9;
+
+  // ── Linhas da tabela
+  doc.setFontSize(9);
+  allResults.forEach((r, idx) => {
+    const isRef    = Math.abs(r.temp - inp.t0) < 1e-9;
+    const isDecade = !isRef && r.temp % 10 === 0;
+
+    if (isRef)         doc.setFillColor(...lorange);
+    else if (isDecade) doc.setFillColor(...lblue);
+    else               doc.setFillColor(...(idx%2===0 ? white : lgray));
+
+    doc.rect(ml, y, pw-ml-mr, 7, 'F');
+
+    if (isRef)    doc.setTextColor(...orange);
+    else          doc.setTextColor(0,0,0);
+
+    doc.setFont('helvetica', isRef ? 'bold' : 'normal');
+    x = ml;
+    const vals = [
+      `${r.temp}°C${isRef?' (ref)':''}`,
+      r.H1.toFixed(1),
+      r.F1.toFixed(3),
+      r.Te1.toFixed(1),
+    ];
+    vals.forEach((v, ci) => {
+      doc.text(v, x + cols[ci]/2, y+4.8, {align:'center'});
+      x += cols[ci];
+    });
+
+    // linha separadora
+    doc.setDrawColor(220,220,220);
+    doc.line(ml, y+7, ml+pw-ml-mr, y+7);
+    y += 7;
+
+    // nova página se necessário
+    if (y > 270) {
+      doc.addPage();
+      y = mt;
+    }
+  });
+
+  y += 4;
+  // ── Rodapé
+  doc.setFillColor(...lorange);
+  doc.rect(ml, y, pw-ml-mr, 8, 'F');
+  doc.setTextColor(...orange); doc.setFont('helvetica','italic'); doc.setFontSize(7.5);
+  const maxFr = allResults.reduce((a,b) => b.F1>a.F1?b:a);
+  doc.text(`Flecha máxima calculada: ${maxFr.F1.toFixed(3)} m em ${maxFr.temp}°C  |  Método: Newton-Raphson (Santiago, Item 3.3)`, ml+2, y+5);
+  y += 12;
+
+  // Data
+  doc.setFontSize(7); doc.setTextColor(150,150,150); doc.setFont('helvetica','normal');
+  doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, ml, y);
+
+  doc.save('Tabela_Esticamento_Cabos.pdf');
+}
+
+// Calcular ao carregar com valores padrão
+window.onload = () => calcular();
+</script>
+</body>
+</html>
