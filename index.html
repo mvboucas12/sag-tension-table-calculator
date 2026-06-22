@@ -376,7 +376,7 @@
 
 <header>
   <h1>⚡ Cable Sag Tension Calculator — Busbars and Overhead Lines</h1>
-  <p>Cable sag calculator as a function of tension and temperature variation &nbsp;|&nbsp;Newton-Raphson Method</p>
+  <p>Cable sag calculator as a function of tension and temperature variation &nbsp;|&nbsp; Santiago – Overhead Transmission Lines, Item 3.3 &nbsp;|&nbsp;Newton-Raphson Method</p>
 </header>
 
 <div class="container">
@@ -448,8 +448,8 @@
           <input type="number" id="dt" value="5" step="1" min="1" max="20">
         </div>
 
-        <button class="btn-calc" onclick="calcular()">⚡ Gerar Tabela de Esticamento</button>
-        <button class="btn-pdf" id="btn-pdf" onclick="exportarPDF()">📄 Exportar como PDF</button>
+        <button class="btn-calc" onclick="calcular()">⚡ Calculate</button>
+        <button class="btn-pdf" id="btn-pdf" onclick="exportarPDF()">📄 Export PDF</button>
 
       </div>
     </div>
@@ -662,7 +662,7 @@ function renderResults(inp, init, results) {
   // Footnote
   const maxF_val  = results.reduce((a,b) => b.F1>a.F1?b:a);
   document.getElementById('table-footer').innerHTML =
-    `⚠️ maximum allowable sag must be verified according to structure spotting template. &nbsp;|&nbsp; Calculated maximum sag: <strong>${maxF_val.F1.toFixed(3)} m</strong> em <strong>${maxF_val.temp}°C</strong>.`;
+    `⚠️ Maximum allowable sag must be verified according to structure spotting template (Santiago, Item 3.6). &nbsp;|&nbsp; Calculated maximum sag: <strong>${maxF_val.F1.toFixed(3)} m</strong> em <strong>${maxF_val.temp}°C</strong>.`;
 
   // Step temperature selector
   const sel = document.getElementById('iter-sel');
@@ -727,7 +727,7 @@ function exportarPDF() {
   doc.setFontSize(13); doc.setFont('helvetica','bold');
   doc.text('CABLE SAG TENSION TABLE', pw/2, 10, {align:'center'});
   doc.setFontSize(8); doc.setFont('helvetica','normal');
-  doc.text('Sag and Tension as a function of temperature variation ', pw/2, 16, {align:'center'});
+  doc.text('Sag and Tension as a function of temperature variation | Santiago – Overhead Transmission Lines, Item 3.3', pw/2, 16, {align:'center'});
   y = 28;
 
   // ── Parameters
@@ -834,12 +834,12 @@ function exportarPDF() {
   doc.rect(ml, y, pw-ml-mr, 8, 'F');
   doc.setTextColor(...orange); doc.setFont('helvetica','italic'); doc.setFontSize(7.5);
   const maxFr = allResults.reduce((a,b) => b.F1>a.F1?b:a);
-  doc.text(`Calculated maximum sag: ${maxFr.F1.toFixed(3)} m em ${maxFr.temp}°C | Newton-Raphson Method`, ml+2, y+5);
+  doc.text(`Calculated maximum sag: ${maxFr.F1.toFixed(3)} m em ${maxFr.temp}°C | Newton-Raphson Method (Santiago, Item 3.3)`, ml+2, y+5);
   y += 12;
 
   // Data
   doc.setFontSize(7); doc.setTextColor(150,150,150); doc.setFont('helvetica','normal');
-  doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, ml, y);
+  doc.text(`Created in: ${new Date().toLocaleString('pt-BR')}`, ml, y);
 
   doc.save('Cable_Sag_Tension_Table.pdf');
 }
