@@ -1,11 +1,11 @@
 # Sag Tension Table Calculator
 
-Aplicação web para cálculo de flecha e tração em linhas de transmissão.
+Web application for sag and tension calculation in overhead busbars and transmission lines.
 
-## Funcionalidades
-- Método Newton-Raphson
-- Exportação PDF
-- Visualização iterativa
+## Features
+- Newton-Raphson Method
+- PDF export
+- Iterative view
 
-## Acesso
+## Access
 https://mvboucas12.github.io/sag-tension-table-calculator/
